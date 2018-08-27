@@ -223,6 +223,30 @@ static void test_offscreen_poly(GTestStats* stats) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+static void test_srcover_alpha(GTestStats* stats) {
+    GPixel pixels[1];
+    GBitmap dstbm(1, 1, sizeof(GPixel), pixels, false);
+    std::unique_ptr<GCanvas> canvas = GCreateCanvas(dstbm);
+    GPaint srcOverPaint;
+    bool good = true;
+    for (int dstAlpha = 0; dstAlpha < 256; ++dstAlpha) {
+        for (int srcAlpha = 0; srcAlpha < 256; ++srcAlpha) {
+            canvas->clear(GColor{(1.0f / 255.0f) * dstAlpha, 0, 0, 0});
+            srcOverPaint.setColor(GColor{(1.0f / 255.0f) * srcAlpha, 0, 0, 0});
+            canvas->drawPaint(srcOverPaint);
+            int expected = srcAlpha + (int)((dstAlpha * (255 - srcAlpha)) * (1.0f / 255.f) + 0.5f);
+            int alpha = GPixel_GetA(pixels[0]);
+            if (alpha != expected) {
+                good = false;
+                // printf("TEST_FAILURE: %u != %u\n", alpha, expected);
+            }
+        }
+    }
+    stats->expectTrue(good, "srcover_alpha_blending_match");
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 const GTestRec gTestRecs[] = {
     { test_clear,       "clear"         },
     { test_rect_colors, "rect_colors"   },
@@ -230,6 +254,8 @@ const GTestRec gTestRecs[] = {
     { test_bad_input_poly, "poly_bad_input" },
     { test_offscreen_poly, "poly_offscreen" },
     
+    { test_srcover_alpha, "srcover_alpha" },
+
     { NULL, NULL },
 };
 
